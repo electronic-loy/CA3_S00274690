@@ -80,6 +80,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes.cs" />
+    <Compile Include="MediaDataInitializer.cs" />
     <Compile Include="Migrations\202505141256500_InitialCreate.cs" />
     <Compile Include="Migrations\202505141256500_InitialCreate.Designer.cs">
       <DependentUpon>202505141256500_InitialCreate.cs</DependentUpon>

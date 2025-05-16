@@ -13,12 +13,11 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Data;
 
 namespace FinalGUI
 {
-    /// <summary>
-    /// Lógica de interacción para MainWindow.xaml
-    /// </summary>
+    
     public partial class MainWindow : Window
     {
         MediaData db = new MediaData();
@@ -29,20 +28,25 @@ namespace FinalGUI
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                var categories = db.MediaItems
+                                   .Select(m => m.Category)
+                                   .Distinct()
+                                   .ToList();
 
-            //Code for window load
-            var categories = db.MediaItems
-                                        .Select(m => m.Category)
-                                        .Distinct()
-                                        .ToList();
+                categories.Insert(0, "All");
 
-            categories.Insert(0, "All"); // Shows a selected filter or all items
+                CmbCategory.ItemsSource = categories;
+                CmbCategory.SelectedIndex = 0;
 
-            cmbCategory.ItemsSource = categories;
-            cmbCategory.SelectedIndex = 0;
-
-            // Load all media items into ListBox by default
-            LoadMediaItems("All");
+                LoadMediaItems("All");
+                LoadBookings(); 
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Startup Error: " + ex.Message);
+            }
         }
 
         private void LoadMediaItems(string category)
@@ -58,12 +62,126 @@ namespace FinalGUI
             
         }
 
-        private void cmbCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void CmbCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            string selectedCategory = cmbCategory.SelectedItem as string;
+            string selectedCategory = CmbCategory.SelectedItem as string;
             LoadMediaItems(selectedCategory);
         }
+        //Search button in tab 1
+        private void btnSearch_Click(object sender, RoutedEventArgs e)
+        {
+            using (var db = new MediaData())
+            {
+                string selectedCategory = CmbCategory.SelectedItem?.ToString();
+                DateTime? startDate = dpStart.SelectedDate;
+                DateTime? endDate = dpEnd.SelectedDate;
 
+                if (startDate == null || endDate == null || endDate < startDate)
+                {
+                    MessageBox.Show("Please enter valid start and end dates.");
+                    return;
+                }
+
+                var items = db.MediaItems.Include(m => m.Category).ToList();
+
+                if (selectedCategory != "All")
+                {
+                    items = items.Where(m => m.Category == selectedCategory).ToList();
+                }
+
+                var unavailableIds = db.Bookings
+                    .Where(b =>
+                        (startDate <= b.EndDate && endDate >= b.StartDate)
+                    )
+                    .Select(b => b.MediaItemId)
+                    .ToList();
+
+                var availableItems = items
+                    .Where(m => !unavailableIds.Contains(m.MediaItemId))
+                    .ToList();
+
+                lstItems.ItemsSource = availableItems;
+            }
+        }
+        //List details UX in tab 1
+        private void lstItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (lstItems.SelectedItem is MediaItem selected)
+            {
+                txtDetails.Text = $"ID: {selected.MediaItemId}\n" +
+                                  $"Title: {selected.Title}\n" +
+                                  $"Author: {selected.Author}\n" +
+                                  $"Category: {selected.Category}\n" +
+                                  $"Description: {selected.Description}";
+            }
+        }
+        //Booking action in tab 1
+        private void btnBook_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = lstItems.SelectedItem as MediaItem;
+            if (selected == null)
+            {
+                MessageBox.Show("Select an item first.");
+                return;
+            }
+
+
+            DateTime? startDate = dpStart.SelectedDate;
+            DateTime? endDate = dpEnd.SelectedDate;
+
+            if (startDate == null || endDate == null || endDate < startDate)
+            {
+                MessageBox.Show("Please enter valid dates.");
+                return;
+            }
+
+            using (var db = new MediaData())
+            {
+                var newBooking = new Booking
+                {
+                    MediaItemId = selected.MediaItemId,
+                    StartDate = startDate.Value,
+                    EndDate = endDate.Value
+                };
+
+                db.Bookings.Add(newBooking);
+                db.SaveChanges();
+
+                MessageBox.Show("Booking successful!");
+                LoadBookings(); // Refresh bookings list
+            }
+        }
+
+        private void DeleteBooking_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = dgBookings.SelectedItem as Booking;
+            if (selected == null)
+            {
+                MessageBox.Show("Select a booking to delete.");
+                return;
+            }
+
+            using (var db = new MediaData())
+            {
+                var bookingToDelete = db.Bookings.Find(selected.BookingId);
+                if (bookingToDelete != null)
+                {
+                    db.Bookings.Remove(bookingToDelete);
+                    db.SaveChanges();
+                    MessageBox.Show("Booking deleted.");
+                    LoadBookings();
+                }
+            }
+        }
+        private void LoadBookings()
+        {
+            using (var db = new MediaData())
+            {
+                dgBookings.ItemsSource = db.Bookings
+                    .Include(b => b.MediaItem)
+                    .ToList();
+            }
+        }
     }
     }
 

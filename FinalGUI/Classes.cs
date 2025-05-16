@@ -22,9 +22,11 @@ namespace FinalGUI
     {
         public int BookingId { get; set; }
         public int MediaItemId { get; set; }
-        public MediaItem MediaItem { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+
+        public virtual MediaItem MediaItem { get; set; }
+
     }
 
     public class MediaData : DbContext

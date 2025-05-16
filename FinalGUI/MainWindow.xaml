@@ -1,34 +1,55 @@
 ﻿<Window x:Class="FinalGUI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:FinalGUI"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
-                Loaded="Window_Loaded">
+        Title="Booking System" Height="500" Width="800"
+        Loaded="Window_Loaded">
 
     <Grid Margin="10">
+
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+
+            <!-- Filters -->
+            <RowDefinition Height="Auto"/>
+            <!-- Search Button -->
             <RowDefinition Height="*"/>
+            <!-- Results + Details -->
         </Grid.RowDefinitions>
 
-        <ComboBox x:Name="cmbCategory"
-                  SelectionChanged="cmbCategory_SelectionChanged"
-                  Width="200" Margin="0,0,0,10" />
+        <!-- Filters -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+            <Label Content="Choose a category:" VerticalAlignment="Center"/>
+            <ComboBox x:Name="cmbCategory" Width="150" Margin="0,0,10,0"
+                      SelectionChanged="cmbCategory_SelectionChanged" />
+            <Label Content="From:" VerticalAlignment="Center"/>
+            <DatePicker x:Name="dpStart" Width="150" Margin="5,0"/>
+            <Label Content="To:" VerticalAlignment="Center"/>
+            <DatePicker x:Name="dpEnd" Width="150" Margin="5,0"/>
+        </StackPanel>
 
-        <Grid Grid.Row="1" Margin="10">
+        <!-- Search Button -->
+        <Button Grid.Row="1" Content="Search" Width="100" Height="30"
+                HorizontalAlignment="Left" Click="btnSearch_Click"/>
+
+        <!-- Results and Details -->
+        <Grid Grid.Row="2" Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="3*"/>
             </Grid.ColumnDefinitions>
 
-          
+            <!-- List of Available Items -->
+            <ListBox x:Name="lstItems" Grid.Column="0" Margin="0,0,10,0"
+                     SelectionChanged="lstItems_SelectionChanged" />
 
-            <TextBlock x:Name="txtDetails"
-                       Grid.Column="1"
-                       TextWrapping="Wrap" />
+            <!-- Item Details and Book Button -->
+            <StackPanel Grid.Column="1">
+                <TextBlock x:Name="txtDetails" TextWrapping="Wrap" 
+                           Margin="0,0,0,10" FontSize="14"/>
+                <Button x:Name="btnBook" Content="Book" Width="64" Height="auto"
+                        Click="btnBook_Click"/>
+            </StackPanel>
         </Grid>
+
     </Grid>
 </Window>

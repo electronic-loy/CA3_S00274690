@@ -29,6 +29,7 @@ namespace FinalGUI
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+
             //Code for window load
             var categories = db.MediaItems
                                         .Select(m => m.Category)

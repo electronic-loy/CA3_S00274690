@@ -15,6 +15,9 @@ namespace FinalGUI
         public string Author { get; set; }
         public string Category { get; set; } // Fiction, Non-fiction, Other Media
         public string Description { get; set; }
+        public virtual ICollection<Booking> Bookings { get; set; } // Navigation property
+
+
     }
 
     //This class will show and store all the info from a booking
@@ -31,7 +34,10 @@ namespace FinalGUI
 
     public class MediaData : DbContext
     {
-        public MediaData() : base("MyMediaData") { }
+        public MediaData() : base("MediaData")
+        {
+            Database.SetInitializer(new MediaDataInitializer());
+        }
         public DbSet<MediaItem> MediaItems { get; set; }
         public DbSet<Booking> Bookings { get; set; }
 

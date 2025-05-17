@@ -20,6 +20,7 @@ namespace FinalGUI
     
     public partial class MainWindow : Window
     {
+
         MediaData db = new MediaData();
         public MainWindow()
         {
@@ -59,7 +60,7 @@ namespace FinalGUI
             }
 
             var items = query.ToList();
-            
+            LstItems.ItemsSource = items;
         }
 
         private void CmbCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -68,7 +69,7 @@ namespace FinalGUI
             LoadMediaItems(selectedCategory);
         }
         //Search button in tab 1
-        private void btnSearch_Click(object sender, RoutedEventArgs e)
+        private void BtnSearch_Click(object sender, RoutedEventArgs e)
         {
             using (var db = new MediaData())
             {
@@ -100,13 +101,13 @@ namespace FinalGUI
                     .Where(m => !unavailableIds.Contains(m.MediaItemId))
                     .ToList();
 
-                lstItems.ItemsSource = availableItems;
+                LstItems.ItemsSource = availableItems;
             }
         }
         //List details UX in tab 1
-        private void lstItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void LstItems_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (lstItems.SelectedItem is MediaItem selected)
+            if (LstItems.SelectedItem is MediaItem selected)
             {
                 txtDetails.Text = $"ID: {selected.MediaItemId}\n" +
                                   $"Title: {selected.Title}\n" +
@@ -116,10 +117,9 @@ namespace FinalGUI
             }
         }
         //Booking action in tab 1
-        private void btnBook_Click(object sender, RoutedEventArgs e)
+        private void BtnBook_Click(object sender, RoutedEventArgs e)
         {
-            var selected = lstItems.SelectedItem as MediaItem;
-            if (selected == null)
+            if (!(LstItems.SelectedItem is MediaItem selected))
             {
                 MessageBox.Show("Select an item first.");
                 return;
@@ -154,8 +154,7 @@ namespace FinalGUI
 
         private void DeleteBooking_Click(object sender, RoutedEventArgs e)
         {
-            var selected = dgBookings.SelectedItem as Booking;
-            if (selected == null)
+            if (!(dgBookings.SelectedItem is Booking selected))
             {
                 MessageBox.Show("Select a booking to delete.");
                 return;

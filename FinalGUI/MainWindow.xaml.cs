@@ -42,7 +42,8 @@ namespace FinalGUI
                 CmbCategory.SelectedIndex = 0;
 
                 LoadMediaItems("All");
-                LoadBookings(); 
+                LoadBookings();
+                LoadItemSummaries();
             }
             catch (Exception ex)
             {
@@ -109,13 +110,72 @@ namespace FinalGUI
         {
             if (LstItems.SelectedItem is MediaItem selected)
             {
-                txtDetails.Text = $"ID: {selected.MediaItemId}\n" +
-                                  $"Title: {selected.Title}\n" +
-                                  $"Author: {selected.Author}\n" +
-                                  $"Category: {selected.Category}\n" +
-                                  $"Description: {selected.Description}";
+                // Reload the most up-to-date item from the database
+                using (var db = new MediaData())
+                {
+                    var freshItem = db.MediaItems.FirstOrDefault(m => m.MediaItemId == selected.MediaItemId);
+                    if (freshItem != null)
+                    {
+                        txtDetails.Text = $"ID: {freshItem.MediaItemId}\n" +
+                                          $"Title: {freshItem.Title}\n" +
+                                          $"Author: {freshItem.Author}\n" +
+                                          $"Category: {freshItem.Category}\n" +
+                                          $"Description: {freshItem.Description}";
+
+                        if (!string.IsNullOrEmpty(freshItem.ImagePath) && System.IO.File.Exists(freshItem.ImagePath))
+                        {
+                            ImgItem.Source = new BitmapImage(new Uri(freshItem.ImagePath));
+                        }
+                        else
+                        {
+                            ImgItem.Source = null;
+                        }
+                    }
+                }
             }
         }
+
+        //Upload an image
+        private void BtnBrowseImage_Click(object sender, RoutedEventArgs e)
+        {
+            if (LstItems.SelectedItem is MediaItem selectedMediaItem)
+            {
+                var dialog = new Microsoft.Win32.OpenFileDialog();
+                dialog.Filter = "Image files (*.jpg; *.jpeg; *.png)|*.jpg;*.jpeg;*.png";
+
+
+                if (dialog.ShowDialog() == true)
+                {
+                    string imagePath = dialog.FileName;
+
+                    using (var db = new MediaData())
+                    {
+                        var item = db.MediaItems.Find(selectedMediaItem.MediaItemId);
+                        if (item != null)
+                        {
+                            item.ImagePath = imagePath;
+                            db.SaveChanges();
+                            MessageBox.Show("Image added successfully.");
+                        }
+
+                    }
+                    string currentCategory = CmbCategory.SelectedItem as string ?? "All";
+                    LoadMediaItems(currentCategory);
+                    LstItems.SelectedItem = LstItems.Items
+                                                        .OfType<MediaItem>()
+                                                            .FirstOrDefault(m => m.MediaItemId == selectedMediaItem.MediaItemId);
+                    ImgItem.Source = new BitmapImage(new Uri(imagePath));
+                }
+            }
+
+            else
+            {
+                MessageBox.Show("Please select a media item first.");
+            }
+            
+
+        }
+
         //Booking action in tab 1
         private void BtnBook_Click(object sender, RoutedEventArgs e)
         {
@@ -135,6 +195,23 @@ namespace FinalGUI
                 return;
             }
 
+            if (startDate < DateTime.Today || endDate < DateTime.Today)
+            {
+                MessageBox.Show("Dates must be from today onwards.");
+                return;
+            }
+
+            // Unable to book an item in a "rented" day
+            var conflicts = db.Bookings.Where
+                                        (b => b.MediaItemId == selected.MediaItemId &&
+                                        startDate <= b.EndDate && endDate >= b.StartDate)
+                                        .ToList();
+
+            if (conflicts.Any())
+            {
+                MessageBox.Show("This item is already booked for the selected date range.");
+                return;
+            }
             using (var db = new MediaData())
             {
                 var newBooking = new Booking
@@ -147,11 +224,39 @@ namespace FinalGUI
                 db.Bookings.Add(newBooking);
                 db.SaveChanges();
 
-                MessageBox.Show("Booking successful!");
+                //Confirmation MessageBox
+                MessageBox.Show($"Booking confirmation:\n" +
+                                $"Media ID: {selected.MediaItemId}\n" +
+                                $"Name: {selected.Title}\n" +
+                                $"Author: {selected.Author}\n" +
+                                $"Rental Date: {startDate:dd/MM/yyyy}\n" +
+                                $"Return Date: {endDate:dd/MM/yyyy}");
                 LoadBookings(); // Refresh bookings list
             }
         }
+        // Tab 2 show the list
+        private void LoadItemSummaries()
+        {
+            using (var db = new MediaData())
+            {
+                var summaries = db.MediaItems
+                    .Select(m => new MediaItemSummary
+                    {
+                        ID = m.MediaItemId,
+                        Name = m.Title,
+                        Author = m.Author,
+                        BookingCount = m.Bookings.Count()
+                    })
+                    .ToList();
 
+                dgItems.ItemsSource = summaries;
+            }
+        }
+
+
+
+
+        //Delete a booking in Tab 3
         private void DeleteBooking_Click(object sender, RoutedEventArgs e)
         {
             if (!(dgBookings.SelectedItem is Booking selected))
@@ -180,6 +285,15 @@ namespace FinalGUI
                     .Include(b => b.MediaItem)
                     .ToList();
             }
+        }
+
+        //Reference for Tab 2
+        public class MediaItemSummary
+        {
+            public int ID { get; set; }
+            public string Name { get; set; }
+            public string Author { get; set; }
+            public int BookingCount { get; set; }
         }
     }
     }

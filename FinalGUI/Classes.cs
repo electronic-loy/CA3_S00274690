@@ -17,6 +17,8 @@ namespace FinalGUI
         public string Description { get; set; }
         public virtual ICollection<Booking> Bookings { get; set; } // Navigation property
 
+        public string ImagePath { get; set; }
+
 
     }
 

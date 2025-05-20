@@ -232,6 +232,8 @@ namespace FinalGUI
                                 $"Rental Date: {startDate:dd/MM/yyyy}\n" +
                                 $"Return Date: {endDate:dd/MM/yyyy}");
                 LoadBookings(); // Refresh bookings list
+                //Refreshes Tab 2
+                LoadItemSummaries();
             }
         }
         // Tab 2 show the list
